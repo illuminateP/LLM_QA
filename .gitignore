@@ -1,0 +1,17 @@
+# 데이터셋 경로 제외
+dataset/
+
+# 실행 결과물 경로 제외
+results/
+
+# 참고문헌 경로 제외
+references/
+
+# 백업 경로 제외
+backup/
+
+# Jupyter Notebook 체크포인트 폴더 제외
+.ipynb_checkpoints/
+
+# PDF 파일 제외
+*.pdf
