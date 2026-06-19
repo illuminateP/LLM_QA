@@ -1,6 +1,6 @@
-# 한국어 기계독해(MRC) 데이터 품질 저하가 QA 모델 성능에 미치는 영향
+# 한국어 기계독해(MRC) 데이터 오염이 모델 성능에 미치는 영향
 
-> **학습 데이터의 "어디에" 노이즈가 끼느냐에 따라 모델 붕괴 정도가 비대칭적으로 달라진다** 는 점을 정량적으로 규명한 데이터 중심(Data-centric) 실험이다.
+> **질문 - 지문 - 정답으로 이루어진 학습 데이터의 "어디에" 노이즈가 끼느냐에 따라 모델 붕괴 정도가 비대칭적으로 달라진다** 는 점을 정량적으로 규명한 데이터 중심(Data-centric) 실험이다.
 > `klue/bert-base` 추출형 QA 모델을 정상 데이터와 **3가지 유형 × 3단계 강도**로 인위 오염한 데이터로 각각 파인튜닝하여 F1/EM 변화를 비교한다.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
@@ -9,47 +9,49 @@
 ![Model](https://img.shields.io/badge/Model-klue%2Fbert--base-1f6feb)
 ![Task](https://img.shields.io/badge/Task-Extractive%20QA%20(KorQuAD%201.0)-2ea44f)
 
-**언어 / Language: 한국어 (아래) · [English (full translation)](#english)**
+**언어 / Language: 한국어 (아래) · [English](#english)**
 
 ---
 
 ## 프로젝트 개요
 
-산업 현장에서 대규모 한국어 학습 데이터를 단기간에 구축하는 과정에서는 삽입·삭제와 같은 휴먼 에러가 불가피하게 섞인다. 본 프로젝트는 **데이터 품질 저하가 기계독해(QA) 모델 성능을 얼마나 떨어뜨리는지를, 오류의 발생 "위치"별로 분리하여 정량적으로 측정**한다.
+대규모 한국어 학습 데이터를 단기간에 구축하는 과정에서는 삽입·삭제와 같은 휴먼 에러가 불가피하게 섞인다. 본 프로젝트는 **데이터 품질 저하가 기계독해(QA) 모델 성능을 얼마나 떨어뜨리는지를, 오류의 발생 위치와 종류별로 분리하여 정량적으로 측정**한다.
 
 - **연구 내용**: AI Hub 행정문서 MRC 데이터를 KorQuAD 1.0 포맷으로 가공하고, 정상셋 1개와 오염셋 9개(3유형 × 10/20/30%)를 생성한 뒤, 동일한 하이퍼파라미터로 각각 `klue/bert-base`를 파인튜닝하여 동일한 검증셋에서 F1/EM을 비교한다.
-- **진입점**: 모든 과정은 **`starter.sh` 하나**로 실행된다.
-- **결과 저장**: 실험별 결과는 [`results/<실험명>/`](results/) 아래 두 파일로 저장된다.
+- **실행 방법**: 모든 과정은 **`starter.sh` 하나**로 실행할 수 있다.
+- **결과**: 실험별 결과는 [`results/<실험명>/`](results/) 아래 두 파일로 저장된다.
   - `final_test_metrics.json` — 최종 성능 지표 `{ "exact_match": EM, "f1": F1 }` (SQuAD 방식).
   - `training_logs.csv` — 스텝별 학습 곡선(loss, learning_rate, eval_loss 등 고정 스키마).
-- **재현성**: 데이터(5.7GB)는 재배포 제한과 용량 문제로 저장소에 포함하지 않고 **재생성 레시피, 동봉 샘플, 실측 결과**로 대체한다. 
-  `bash starter.sh sample`로 샘플 데이터로 파이프라인 전 과정을 검증할 수 있다.
+- **재현성**: 데이터(5.7GB)는 라이센스와 용량 문제로 저장소에 포함하지 않고 **재생성 레시피, 동봉 샘플, 실측 결과**로 대체한다. 
+  `bash starter.sh sample`로 샘플 합성 데이터를 사용해 파이프라인 전 과정을 검증할 수 있다.
 
 ---
 
-## 핵심 결과 요약
+## 결과 요약
 
 ![데이터 품질 저하 요인별 F1 Score 비교](assets/results_f1.png)
 
-오염 강도 30% 지점에서 정상군(Baseline, F1 81.4) 대비 하락폭은 **결측 −3.6%p, 지문 오염 −37.1%p, 정답 오염 −71.4%p** 로 극명하게 비대칭적이다.
+오염 30% 지점에서 정상군(Baseline, F1 81.4) 대비 하락폭은 **결측 −3.6%p, 지문 오염 −37.1%p, 정답 오염 −71.4%p** 로 극명하게 비대칭적이다.
 
-| 실험군 | 10% (F1 / EM) | 20% (F1 / EM) | 30% (F1 / EM) |
+**기준선 — Baseline (오염 없음): F1 81.41 / EM 71.99**
+
+| 오염 유형 | 10% (F1 / EM) | 20% (F1 / EM) | 30% (F1 / EM) |
 |---|---|---|---|
-| **Baseline** | — | — | **81.41 / 71.99** |
-| Deletion (데이터 결측) | 81.50 / 71.98 | 79.18 / 69.07 | 77.85 / 67.48 |
-| Insertion-Que (구문 오염) | 74.53 / 65.06 | 60.15 / 50.89 | 44.29 / 36.65 |
-| Insertion-Ans (정답 오염) | 28.29 / 19.68 | 24.35 / 17.71 | 10.02 / 6.90 |
+| Deletion (데이터 결측) | 81.50 / 71.98<br>(+0.1% / ±0.0%) | 79.18 / 69.07<br>(−2.2% / −2.9%) | 77.85 / 67.48<br>(−3.6% / −4.5%) |
+| Insertion-Que (구문 오염) | 74.53 / 65.06<br>(−6.9% / −6.9%) | 60.15 / 50.89<br>(−21.3% / −21.1%) | 44.29 / 36.65<br>(−37.1% / −35.3%) |
+| Insertion-Ans (정답 오염) | 28.29 / 19.68<br>(−53.1% / −52.3%) | 24.35 / 17.71<br>(−57.1% / −54.3%) | 10.02 / 6.90<br>(−71.4% / −65.1%) |
 
-<details>
-<summary><b>EM(Exact Match) Score 그래프 보기</b></summary>
+
+<br>
+<br>
+
+<b>EM(Exact Match) Score</b>
 
 ![데이터 품질 저하 요인별 EM Score 비교](assets/results_em.png)
 
-</details>
 
-> 수치 출처: [`results/`](results/) 의 `final_test_metrics.json` (검증셋 37,042 QA 평가) · 그래프 원본: [최종 보고서.hwpx](최종%20보고서.hwpx)
 
-**→ 데이터 품질 저하의 치명도: 라벨링 정확성 > 구문 정확성 > 데이터 결측률**
+> **결론** : **같은 양의 노이즈라도 "정보 밀도"가 높은 데이터일수록 오염에 치명적이다.** 정보 밀도가 높은 **정답 라벨**은 미세한 오염에도 붕괴하지만, 정보가 분산·중복된 **지문**은 30% 결측에도 견딘다. 그 결과 품질 저하의 치명도와 검수 우선순위는 **정답(라벨) > 질문(구문) > 지문(결측)** 순으로 나타난다.
 
 ---
 
@@ -59,21 +61,16 @@ NIA 데이터 품질관리 가이드라인은 **유효성**(저품질 데이터�
 
 한국어 텍스트 입력 오류의 대부분은 편집 거리 1 이내의 단순 오타에서 비롯되며, 크게 **삽입(Insertion)·삭제(Deletion)·대치(Substitution)** 세 유형으로 분류된다. 특히 BERT 계열이 사용하는 서브워드 토크나이저는 오탈자가 섞인 단어를 원래 의미 단위로 분해하지 못하고 개별 문자나 `[UNK]` 토큰으로 분절한다. 따라서 오류가 빈번할 경우 **모델이 학습해야 할 목표 자체가 왜곡된다.** 본 연구는 이 가운데 현장에서 가장 빈번한 **삽입·삭제** 오류가 발생 위치(지문 또는 정답)에 따라 성능에 미치는 영향이 어떻게 달라지는지에 집중한다.
 
-**연구 질문**
-1. 지문 내 정보 결측이 모델의 문맥 이해 능력에 미치는 영향은 어느 정도인가?
-2. 지문 오탈자에 대한 BERT 사전학습 기반 강건성은 실제로 유효한가?
-3. 정답 라벨 오염에 따른 잘못된 토크나이징은 어느 정도의 성능 저하를 야기하는가?
-4. 이상의 결과를 바탕으로 데이터 품질 검수의 우선순위를 어떻게 설정해야 하는가?
+<br>
 
 ### 3가지 품질 저하 요인
-
 | 요인 | 코드 태그 | 오염 방식 | 예시 (정답 = `관할 지방자치단체장`) |
 |---|---|---|---|
 | **데이터 결측률** | `deletion` | 정답 스팬을 제외한 지문 토큰의 n%를 무작위 삭제 | `생활폐기물은 관할 지방자치단체장이 처리한다.` → `은 관할 지방자치단체장이 처리한다.` |
 | **구문 정확성 저하** | `insertion_que` | 정답 외 지문 텍스트 사이에 특수문자(`!@#$%^&*`) 삽입 | `생@활폐기%물은 관할 지방자치단체장이 처리한다.` |
 | **라벨링 정확성 저하** | `insertion_ans` | **정답 텍스트 자체**에 특수문자 삽입 (학습 목표 왜곡) | 정답 → `관!할 지방자@치단체장` |
 
-각 요인을 10/20/30% 강도로 적용하여 오염군 9개와 정상군 1개, 즉 **총 10개의 데이터셋**을 구성하였다. 검증셋은 오염하지 않은 상태로 고정하여 공정한 비교가 가능하도록 하였다.
+각 요인을 10/20/30% 강도로 적용하여 오염군 9개와 정상군 1개, 즉 **총 10개의 데이터셋**을 구성하였다. 검증셋은 오염되지 않은 상태로 고정하여 공정한 비교가 가능하도록 하였다.
 
 ---
 
@@ -82,11 +79,12 @@ NIA 데이터 품질관리 가이드라인은 **유효성**(저품질 데이터�
 ![실험 파이프라인: AI Hub 원천 → 전처리 → 오염 → 파인튜닝 → 결과](assets/pipeline_ko.png)
 
 **모델 구조** — `[CLS] 질문 [SEP] 지문 [SEP]` 형태로 결합한 시퀀스를 BERT 인코더에 통과시키면, 출력층이 지문의 각 토큰이 정답의 **시작/끝 위치일 확률**을 산출한다. 학습에는 Cross-Entropy Loss를 사용한다.
+모델은 klue-BERT 모델을 그대로 가져와 별도의 프리트레인 사용한다.
 
 <p align="center"><img src="assets/architecture.png" alt="추출형 QA 모델 아키텍처" width="360"></p>
 
 - **데이터**: AI Hub [행정 문서 대상 기계독해 데이터](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=569) 를 KorQuAD 1.0 포맷으로 가공하였다. 학습 **197,698** / 검증 **37,042** QA 쌍이다.
-- **모델**: `klue/bert-base` 인코더에 선형 출력층(정답 시작/끝 위치 예측)을 결합하였으며, 토크나이저는 `BertTokenizerFast`(WordPiece)이다.
+- **모델**: `klue/bert-base`에 선형 출력층(정답 시작/끝 위치 예측)을 결합하였으며, 토크나이저는 `BertTokenizerFast`(WordPiece)를 사용하였다.
 - **평가 지표**: SQuAD **F1**(토큰 단위 중첩 = 문맥 이해)과 **EM**(완전 일치 = 정확 추출)을 사용한다.
 - **학습 하이퍼파라미터** (전 실험 동일):
 
@@ -108,7 +106,7 @@ NIA 데이터 품질관리 가이드라인은 **유효성**(저품질 데이터�
 ![Deletion 그룹 Validation Loss 곡선](assets/loss_deletion.png)
 
 **2. 구문 정확성 저하: 예상을 상회한 성능 저하 (F1 −37.1%p @30%)**
-"BERT는 MLM 사전학습을 통해 노이즈에 강건할 것"이라는 가설을 정면으로 **반증하는 결과이다.** 주된 원인은 서브워드 토크나이저의 구조적 취약점에 있다. `지방자치단체`에 특수문자가 삽입되어 `지방#자&치단@체`로 변형되면, `[지방]+[자치]+[단체]`라는 의미 단위가 파괴되어 파편화(fragmentation)된다. 오염도가 높아질수록 성능 하락은 더욱 가팔라진다.
+"BERT는 MLM 사전학습을 통해 노이즈에 강건할 것"이라는 가설을 정면으로 **반증하는 결과이다.** 주된 원인은 서브워드 토크나이저의 구조적 취약점에 있다. 질문의 `지방자치단체`에 특수문자가 삽입되어 `지방#자&치단@체`로 변형되면, `[지방]+[자치]+[단체]`라는 의미 단위가 파괴되어 파편화(fragmentation)된다. 오염도가 높아질수록 성능 하락은 더욱 가팔라진다.
 
 ![Insertion-Que 그룹 Validation Loss 곡선](assets/loss_insertion_que.png)
 
@@ -119,16 +117,16 @@ NIA 데이터 품질관리 가이드라인은 **유효성**(저품질 데이터�
 
 > **주목할 점**: `insertion_ans`는 검증 **loss가 가장 낮음에도**(오염된 정답 라벨에 그대로 과적합) F1/EM은 붕괴한다. 낮은 loss가 모델의 실질적 무력화를 가린다는, 라벨 오염의 위험성을 단적으로 보여주는 현상이다.
 
-> ### 핵심 통찰: 정보 밀도와 노이즈 민감도
+> ### 결론: 정보 밀도와 노이즈 민감도
 > **정보 밀도가 높은 데이터일수록 노이즈에 치명적이다.** 짧지만 핵심이 압축된 **정답 라벨**은 미세한 오염만으로 학습 목표가 붕괴하는 반면, 정보가 분산·중복된 **지문**은 30% 결측에도 견딘다. 즉, 모델 성능을 좌우하는 것은 노이즈의 "양"이 아니라 노이즈가 위치한 지점의 "정보 밀도"이다.
 
-> 자세한 서론·이론적 배경·전체 분석은 [최종 보고서.hwpx](최종%20보고서.hwpx), 오염 설계 상세는 [실험 설계.hwpx](실험%20설계.hwpx) 를 참고하라.
+> 자세한 서론·이론적 배경·전체 분석과 더 자세한 내용은 [reports.pdf](reports.pdf)를 참고하라.
 
 ---
 
-## 실무 시사점: 검수 인력 투입 우선순위
+## 시사점: 검수 인력 투입 우선순위
 
-본 실험은 **노이즈가 모델에 미치는 영향이 데이터 유형별로 비대칭적**임을 보여준다. 따라서 모든 데이터에 동일한 품질 관리를 적용하는 것은 비효율적이며, 한정된 인력과 예산은 **민감도가 높은 영역에 집중 투입**할 때 ROI가 극대화된다. 검수 우선순위는 다음과 같다.
+본 실험은 **노이즈가 모델에 미치는 영향이 데이터 유형별로 비대칭적**임을 보여준다. 따라서 모든 데이터에 동일한 품질 관리 방법을 적용하는 것은 비효율적이며, 한정된 인력과 예산은 **민감도가 높은 영역에 집중 투입**할 때 ROI(Return on Investment)가 극대화된다. 검수 우선순위는 다음과 같다.
 
 | 우선순위 | 데이터 유형 | 노이즈 민감도 | 근거(실험 결과) | 권장 검수 전략 |
 |:---:|---|---|---|---|
@@ -140,7 +138,7 @@ NIA 데이터 품질관리 가이드라인은 **유효성**(저품질 데이터�
 
 ---
 
-## 설치
+## 설치 및 환경 구축
 
 ```bash
 git clone <repository-url>
@@ -149,13 +147,13 @@ cd LLM_QA
 pip install -r requirements.txt
 ```
 
-> **torch 주의**: 원 실험은 AMD ROCm 환경에서 수행하였다. `requirements.txt` 의 `torch>=2.1` 은 플랫폼 독립 표기이므로, 사용 중인 가속기(CUDA/ROCm/CPU)에 맞는 빌드를 [pytorch.org](https://pytorch.org/get-started/locally/) 안내에 따라 설치한다. 의존성은 코드가 실제로 사용하는 패키지만 정리되어 있다.
+> **torch 주의**: 원 실험은 9070xt를 활용한 Linux / AMD ROCm 환경에서 수행하였다. `requirements.txt` 의 `torch>=2.1` 은 플랫폼 독립 표기이므로, 사용 중인 가속기(CUDA/ROCm/CPU)에 맞는 빌드를 [pytorch.org](https://pytorch.org/get-started/locally/) 안내에 따라 설치한다. requirements.txt에는 코드가 실제로 사용하는 패키지만 정리되어 있다.
 
 ---
 
 ## 데이터 준비 (AI Hub)
 
-학습/검증 데이터는 AI Hub 원천의 파생물이라 **재배포가 제한**되고, 전체 약 **5.7GB**(10개 파일이 100MB 초과)로 GitHub 단일 파일 한도에도 걸린다. 따라서 저장소에 포함하지 않고 **원천에서 재생성**한다. (데이터 없이 파이프라인만 확인하려면 `bash starter.sh sample`)
+학습/검증 데이터는 **재배포가 제한**되고, 전체 약 **5.7GB**(10개 파일이 100MB 초과)로 GitHub 단일 파일 한도에도 걸린다. 따라서 저장소에 포함하지 않고 **원천에서 재생성**한다. (데이터 없이 파이프라인만 확인하려면 `bash starter.sh sample`)
 
 **1) 원천 내려받기** — AI Hub [행정 문서 대상 기계독해 데이터](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=569) (회원가입·이용 신청 필요, 라이선스는 AI Hub 정책을 따른다).
 
@@ -193,8 +191,6 @@ datasets/raw/
 
 ## 전체 재현 절차
 
-처음부터 끝까지 그대로 따라 하면 동일한 결과를 재현할 수 있다.
-
 ```bash
 # 1) 가상환경 생성 및 활성화
 conda create -n llm_qa python=3.10 -y
@@ -218,7 +214,7 @@ cat results/baseline/final_test_metrics.json        # F1 / EM
 head results/baseline/training_logs.csv             # 학습 곡선
 ```
 
-`starter.sh` 는 데이터가 없으면 준비·오염 단계를 자동으로 수행하고, 이미 완료된 실험은 건너뛰며(멱등), 중단된 경우 마지막 체크포인트부터 재개한다.
+`starter.sh` 는 데이터가 없으면 준비·오염 단계를 자동으로 수행하고, 이미 완료된 실험은 건너뛰며, 중단된 경우 마지막 체크포인트부터 재개한다.
 
 ### 단계별 수동 실행
 
@@ -249,12 +245,12 @@ python src/run_finetuning.py --experiment_name baseline \
 ├── results/                    # [결과] 10개 실험의 지표/학습로그 (커밋됨)
 │   └── <실험명>/{final_test_metrics.json, training_logs.csv}
 ├── assets/                     # README용 결과 그래프·아키텍처 이미지
-└── 최종 보고서.hwpx             # 최종 보고서 전문(서론·설계·결과·논의)
+└── reports             # 최종 보고서 전문
 ```
 
 | 파일 / 경로 | 역할 |
 |---|---|
-| **`starter.sh`** | **유일한 진입점.** 데이터 준비 → 오염 생성 → 10개 실험 학습/평가를 순차 실행한다. `sample`/`full` 모드를 지원한다 |
+| **`starter.sh`** | **진입점.** 데이터 준비 → 오염 생성 → 10개 실험 학습/평가를 순차 실행한다. `sample`/`full` 모드를 지원한다 |
 | `requirements.txt` | 코드가 실제 import하는 패키지만 정리 (torch, transformers, datasets, evaluate, numpy + accelerate, 노트북용 pandas·tqdm) |
 | `src/prepare_data.py` | 원천 JSON 병합 및 정답의 본문 내 위치(`answer_start`) 탐색 → `datasets/bert_train.json`, `bert_validation.json` 생성 |
 | `src/corrupt.py` | 정상 학습셋에서 `deletion`/`insertion_que`/`insertion_ans` × 10/20/30% 오염셋과 baseline 생성 → `datasets/train_*.json` (10개) |
@@ -271,15 +267,14 @@ python src/run_finetuning.py --experiment_name baseline \
 
 ---
 
-## 엔지니어링 하이라이트
+## 하이라이트
 
-- **단일 진입점 오케스트레이션** — `starter.sh` 하나로 데이터 준비·오염·10개 실험을 순차 수행한다.
+- **단일 진입점** — 전체 데이터를 Ai Hub에서 가져와 전처리하고 파인튜닝하는 통합 파이프라인을 `starter.sh` 하나로 구성하여 데이터 준비·오염·10개 실험을 순차 수행한다.
 - **재현성** — 오염 생성 시드 고정, 의존성 최소화, 데이터 없이도 동작하는 샘플 스모크 테스트를 제공한다.
-- **멱등 재실행** — 완료된 실험(`final_test_metrics.json` 존재)은 자동 스킵하며, 중단 시 마지막 체크포인트에서 자동 재개한다.
+- **재실행** — 완료된 실험(`final_test_metrics.json` 존재)은 자동 스킵하며, 중단 시 마지막 체크포인트에서 자동 재개한다.
 - **견고한 로깅** — 학습/평가/요약 행을 고정 컬럼 스키마 CSV로 실시간 기록하여 중단되어도 직전까지 보존되며, 별도의 복구 단계가 필요 없다.
 - **데이터 거버넌스** — 재배포 제한 데이터를 "재생성 레시피 + 결과물"로 대체하여 라이선스와 용량 문제를 동시에 해결한다.
 - **충돌 방지** — 샘플 실행 결과는 실제 `results/` 와 이름이 겹치는 경우 `results/sample/` 로 자동 분리 저장한다.
-
 ---
 
 ## 한계 및 향후 연구
@@ -293,7 +288,7 @@ python src/run_finetuning.py --experiment_name baseline \
 ## 데이터 출처 및 라이선스
 
 - 데이터: AI Hub [행정 문서 대상 기계독해 데이터](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=569). 데이터 이용은 AI Hub 정책을 따르며, 본 저장소는 원천 데이터를 재배포하지 않는다.
-- 코드: 자유롭게 참고·재사용 가능하다(라이선스는 추후 명시).
+- 코드: 자유롭게 참고·재사용 가능하다(MIT)
 
 <br/>
 
@@ -302,47 +297,46 @@ python src/run_finetuning.py --experiment_name baseline \
 
 <a id="english"></a>
 
-# Impact of Training-Data Quality Degradation on Korean MRC (Extractive QA)
+# Impact of Training-Data Corruption on Korean MRC (Extractive QA)
 
-> A data-centric study quantifying how the **location** of noise in training data asymmetrically determines model collapse.
+> A data-centric study quantifying how the **location** of noise in question–context–answer training data asymmetrically determines model collapse.
 > A `klue/bert-base` extractive-QA model is fine-tuned separately on clean data and on data artificially corrupted in **3 types × 3 intensities**, then compared by F1/EM.
 
-**Language: [한국어 (top)](#한국어-기계독해mrc-데이터-품질-저하가-qa-모델-성능에-미치는-영향) · English (below)**
+**Language: [한국어 (top)](#한국어-기계독해mrc-데이터-오염이-모델-성능에-미치는-영향) · English (below)**
 
 ## Project Overview
 
-When large-scale Korean training data is built quickly in the field, human errors such as insertion and deletion inevitably arise. This project **measures, separated by the *location* of the error, how much data-quality degradation harms a machine-reading-comprehension (QA) model.**
+Building large-scale Korean training data on a tight schedule inevitably introduces human errors such as insertion and deletion. This project **measures how much data-quality degradation harms a machine-reading-comprehension (QA) model, separated by the location and type of the error.**
 
 - **Scope**: Process AI Hub administrative-document MRC data into KorQuAD 1.0 format, generate 1 clean set and 9 corrupted sets (3 types × 10/20/30%), fine-tune `klue/bert-base` on each with identical hyperparameters, and compare F1/EM on the same validation set.
-- **Entry point**: The entire process runs from a **single `starter.sh`**.
-- **How results are stored**: Each experiment's results are saved under [`results/<experiment>/`](results/) as two files.
+- **How to run**: The entire process runs from a **single `starter.sh`**.
+- **Results**: Each experiment's results are saved under [`results/<experiment>/`](results/) as two files.
   - `final_test_metrics.json` — final metrics `{ "exact_match": EM, "f1": F1 }` (SQuAD-style).
   - `training_logs.csv` — per-step training curve (fixed schema: loss, learning_rate, eval_loss, …).
-- **Reproducibility**: The dataset (5.7 GB) is not committed (redistribution restrictions and size); it is replaced by a **regeneration recipe, a bundled sample, and the measured results**. `bash starter.sh sample` validates the entire pipeline without any data.
+- **Reproducibility**: The dataset (5.7 GB) is not committed (licensing and size); it is replaced by a **regeneration recipe, a bundled sample, and the measured results**. `bash starter.sh sample` runs the whole pipeline on synthetic sample data, without the real dataset.
 
 ## Results Summary
 
 ![F1 Score by data-quality factor](assets/results_f1.png)
 
-At 30% corruption intensity, the drop versus Baseline (F1 81.4) is starkly **asymmetric**: deletion −3.6 pp, context noise −37.1 pp, answer-label noise −71.4 pp.
+At 30% corruption, the drop versus Baseline (F1 81.4) is starkly **asymmetric**: deletion −3.6 pp, context noise −37.1 pp, answer-label noise −71.4 pp.
 
-| Group | 10% (F1 / EM) | 20% (F1 / EM) | 30% (F1 / EM) |
+**Reference — Baseline (no corruption): F1 81.41 / EM 71.99**
+
+| Corruption type | 10% (F1 / EM) | 20% (F1 / EM) | 30% (F1 / EM) |
 |---|---|---|---|
-| **Baseline** | — | — | **81.41 / 71.99** |
-| Deletion (missing info) | 81.50 / 71.98 | 79.18 / 69.07 | 77.85 / 67.48 |
-| Insertion-Que (context noise) | 74.53 / 65.06 | 60.15 / 50.89 | 44.29 / 36.65 |
-| Insertion-Ans (answer-label noise) | 28.29 / 19.68 | 24.35 / 17.71 | 10.02 / 6.90 |
+| Deletion (missing info) | 81.50 / 71.98<br>(+0.1% / ±0.0%) | 79.18 / 69.07<br>(−2.2% / −2.9%) | 77.85 / 67.48<br>(−3.6% / −4.5%) |
+| Insertion-Que (context noise) | 74.53 / 65.06<br>(−6.9% / −6.9%) | 60.15 / 50.89<br>(−21.3% / −21.1%) | 44.29 / 36.65<br>(−37.1% / −35.3%) |
+| Insertion-Ans (answer-label noise) | 28.29 / 19.68<br>(−53.1% / −52.3%) | 24.35 / 17.71<br>(−57.1% / −54.3%) | 10.02 / 6.90<br>(−71.4% / −65.1%) |
 
-<details>
-<summary><b>Show EM (Exact Match) chart</b></summary>
+<br>
+<br>
+
+<b>EM (Exact Match) Score</b>
 
 ![EM Score by data-quality factor](assets/results_em.png)
 
-</details>
-
-> Numbers from `final_test_metrics.json` in [`results/`](results/) (evaluated on 37,042 validation QAs). Charts from the final report (`최종 보고서.hwpx`).
-
-**→ Severity of quality degradation: Answer-label > Context-syntax > Missing-info.**
+> **In short** — for a given amount of noise, the higher the **information density**, the more fatal it is. The compressed **answer label** collapses under the slightest corruption, while the dispersed, redundant **context** survives even 30% deletion. Hence the severity of degradation — and the review priority — runs **Answer (label) > Question (syntax) > Context (deletion)**.
 
 ## Experiment Overview
 
@@ -371,6 +365,7 @@ Each factor is applied at 10/20/30% intensity, yielding 9 corrupted and 1 clean 
 ![Pipeline: AI Hub source -> preprocess -> corrupt -> fine-tune -> results](assets/pipeline_en.png)
 
 **Model architecture** — the `[CLS] Question [SEP] Context [SEP]` sequence passes through the BERT encoder; the output layer predicts each context token's probability of being the answer **start / end** position, trained with Cross-Entropy loss.
+The model uses klue-BERT directly, with no additional pretraining.
 
 <p align="center"><img src="assets/architecture.png" alt="Extractive QA model architecture" width="360"></p>
 
@@ -395,7 +390,7 @@ As long as the answer tokens are preserved, the model derives the answer from th
 ![Validation loss — Deletion group](assets/loss_deletion.png)
 
 **2. Syntactic accuracy: more damaging than expected (F1 −37.1 pp @30%).**
-This directly **disproves** the hypothesis that "BERT is robust to noise thanks to MLM pretraining." The principal cause lies in the structural weakness of subword tokenizers: when special characters are injected (`지방자치단체` → `지방#자&치단@체`), the meaningful units `[지방]+[자치]+[단체]` are destroyed into fragments. The drop steepens as intensity rises.
+This directly **disproves** the hypothesis that "BERT is robust to noise thanks to MLM pretraining." The principal cause lies in the structural weakness of subword tokenizers: when special characters are injected into a question keyword (`지방자치단체` → `지방#자&치단@체`), the meaningful units `[지방]+[자치]+[단체]` are destroyed into fragments. The drop steepens as intensity rises.
 
 ![Validation loss — Insertion-Que group](assets/loss_insertion_que.png)
 
@@ -406,14 +401,14 @@ This is the most destructive of the three. **Just 10% corruption reduces F1 from
 
 > **Note**: `insertion_ans` shows the **lowest** validation loss (it overfits the corrupted answer labels) yet collapses on F1/EM — a vivid illustration that a low loss can mask a model that is, in fact, non-functional.
 
-> ### Key Insight: information density and noise sensitivity
+> ### Conclusion: information density and noise sensitivity
 > **The higher a datum's information density, the more fatal noise is.** The short, information-dense **answer label** collapses under the slightest corruption, whereas the dispersed, redundant **context** withstands even 30% deletion. What governs performance is not the *amount* of noise but the *information density* at the point where the noise lands.
 
-> See the final report (`최종 보고서.hwpx`) for full background and analysis, and `실험 설계.hwpx` for corruption-design details.
+> For the full background, theory, and complete analysis, see [reports.pdf](reports.pdf).
 
-## Practical Implications
+## Implications: Data-Review Priority
 
-The experiment shows that **noise affects the model asymmetrically by data type**. Applying uniform quality control to all data is therefore inefficient; limited manpower and budget should be **concentrated on high-sensitivity areas** to maximize ROI. The review priority is as follows.
+The experiment shows that **noise affects the model asymmetrically by data type**. Applying uniform quality control to all data is therefore inefficient; limited manpower and budget should be **concentrated on high-sensitivity areas** to maximize ROI (return on investment). The review priority is as follows.
 
 | Priority | Data type | Noise sensitivity | Evidence (results) | Recommended review strategy |
 |:---:|---|---|---|---|
@@ -423,7 +418,7 @@ The experiment shows that **noise affects the model asymmetrically by data type*
 
 **Summary**: Allocate review resources in the order `Answer (label) > Question > Context`. A **"select-and-focus" strategy** — intensive full verification for answers, automated cleaning for questions, and flexible sampling for contexts — prevents wasted budget while securing tangible performance gains.
 
-## Installation
+## Installation & Environment Setup
 
 ```bash
 git clone <repository-url>
@@ -432,7 +427,7 @@ cd LLM_QA
 pip install -r requirements.txt
 ```
 
-> **Note on torch**: the original experiments ran on AMD ROCm. `torch>=2.1` in `requirements.txt` is a platform-independent placeholder — install the build matching your accelerator (CUDA/ROCm/CPU) per [pytorch.org](https://pytorch.org/get-started/locally/). Dependencies are trimmed to only what the code actually uses.
+> **Note on torch**: the original experiments ran on Linux / AMD ROCm (Radeon RX 9070xt). `torch>=2.1` in `requirements.txt` is a platform-independent placeholder — install the build matching your accelerator (CUDA/ROCm/CPU) per [pytorch.org](https://pytorch.org/get-started/locally/). Dependencies are trimmed to only what the code actually uses.
 
 ## Data Preparation (AI Hub)
 
@@ -528,8 +523,7 @@ python src/run_finetuning.py --experiment_name baseline \
 ├── results/                    # [RESULTS] metrics/training logs for 10 experiments (committed)
 │   └── <experiment>/{final_test_metrics.json, training_logs.csv}
 ├── assets/                     # result charts & architecture image used in this README
-├── 실험 설계.hwpx               # experiment-design document (Korean)
-└── 최종 보고서.hwpx             # final report (Korean)
+└── reports/                    # full final report
 ```
 
 | File / path | Role |
@@ -549,11 +543,11 @@ python src/run_finetuning.py --experiment_name baseline \
 
 > The 10 experiment names are `baseline`, `deletion_{10,20,30}`, `insertion_que_{10,20,30}`, `insertion_ans_{10,20,30}`.
 
-## Engineering Highlights
+## Highlights
 
-- **Single-entry orchestration** — one `starter.sh` runs data prep, corruption, and all 10 experiments.
+- **Single entry point** — an integrated pipeline that pulls data from AI Hub, preprocesses, and fine-tunes, all wired into a single `starter.sh` that runs data prep, corruption, and all 10 experiments in sequence.
 - **Reproducibility** — fixed corruption seed, minimal dependencies, and a sample smoke-test that runs without data.
-- **Idempotent re-runs** — finished experiments (existing `final_test_metrics.json`) are skipped; training auto-resumes from the last checkpoint after interruption.
+- **Re-runs** — finished experiments (existing `final_test_metrics.json`) are skipped; training auto-resumes from the last checkpoint after interruption.
 - **Robust logging** — training/eval/summary rows are written live to a fixed-schema CSV (preserved even on interruption); no separate recovery step is needed.
 - **Data governance** — redistribution-restricted data is replaced by a "regeneration recipe + results," resolving both licensing and size constraints simultaneously.
 - **Collision-safe** — sample-run outputs are auto-separated into `results/sample/` when names would clash with the real `results/`.
@@ -567,4 +561,4 @@ python src/run_finetuning.py --experiment_name baseline \
 ## Data Source & License
 
 - Data: AI Hub [administrative-document MRC dataset](https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=569). Data use follows AI Hub policy; this repository does not redistribute the source data.
-- Code: free to reference/reuse (license to be specified).
+- Code: free to reference/reuse (MIT).
