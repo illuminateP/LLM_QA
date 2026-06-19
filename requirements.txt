@@ -1,0 +1,16 @@
+# 원 실험은 AMD ROCm(torch 2.10 nightly + rocm6.3) 환경에서 수행했습니다.
+# 아래는 플랫폼 독립 설치를 위한 표기이며, 사용 중인 가속기(CUDA/ROCm/CPU)에 맞는
+# torch 빌드를 설치하세요 → https://pytorch.org/get-started/locally/
+torch>=2.1
+accelerate==1.12.0          # transformers Trainer 실행에 필수 (자동 설치되지 않음)
+
+# --- Hugging Face 스택 (학습/평가) 
+transformers==4.57.6
+datasets==4.5.0
+evaluate==0.4.6             # SQuAD F1/EM 지표
+
+# --- 수치/데이터 처리 
+numpy==2.2.6
+
+# --- notebooks 전용
+tqdm==4.67.1
