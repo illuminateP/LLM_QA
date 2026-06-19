@@ -96,7 +96,7 @@ NIA 데이터 품질관리 가이드라인은 유효성(저품질 데이터로 �
   | Learning rate | 3e-5 | Max length / stride | 384 / 128 |
   | Batch size | 16 | Precision | Mixed Precision (FP16) |
 
-- **실험 환경(원 실험)**: NVIDIA RTX A6000 (48GB) 및 AMD Radeon RX 9070xt (ROCm) / Ubuntu 22.04, RHEL 9.6 / PyTorch 2.x + HuggingFace Transformers.
+- **실험 환경(원 실험)**: AMD Radeon RX 9070xt (ROCm) / Ubuntu 22.04, RHEL 9.6 / PyTorch 2.x + HuggingFace Transformers.
 
 ---
 
